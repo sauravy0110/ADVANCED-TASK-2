@@ -1,0 +1,69 @@
+import tensorflow as tf
+from tensorflow.keras import layers, models
+import matplotlib.pyplot as plt
+from tensorflow.keras.datasets import cifar10
+
+# Load and preprocess data
+(x_train, y_train), (x_test, y_test) = cifar10.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
+# Convert labels to one-hot encoding
+y_train = tf.keras.utils.to_categorical(y_train, 10)
+y_test = tf.keras.utils.to_categorical(y_test, 10)
+
+# Define the CNN model
+model = models.Sequential([
+    layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+    layers.MaxPooling2D((2, 2)),
+    layers.Conv2D(64, (3, 3), activation='relu'),
+    layers.MaxPooling2D((2, 2)),
+    layers.Conv2D(64, (3, 3), activation='relu'),
+    layers.Flatten(),
+    layers.Dense(64, activation='relu'),
+    layers.Dense(10, activation='softmax')
+])
+
+# Compile the model
+model.compile(optimizer='adam',
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])
+
+# Train the model
+history = model.fit(x_train, y_train, epochs=10, validation_split=0.2, batch_size=64)
+
+# Evaluate the model
+test_loss, test_acc = model.evaluate(x_test, y_test)
+print(f"Test accuracy: {test_acc:.2f}")
+
+# Plot training and validation metrics
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Accuracy')
+plt.legend()
+
+plt.subplot(1, 2, 2)
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Loss')
+plt.legend()
+
+plt.show()
+
+# Predict and visualize results
+import numpy as np
+
+# Select random test images
+idx = np.random.choice(len(x_test), 10, replace=False)
+sample_images = x_test[idx]
+sample_labels = np.argmax(y_test[idx], axis=1)
+predictions = np.argmax(model.predict(sample_images), axis=1)
+
+# Plot images with predictions
+fig, axes = plt.subplots(1, 10, figsize=(20, 5))
+for i, ax in enumerate(axes):
+    ax.imshow(sample_images[i])
+    ax.axis('off')
+    ax.set_title(f"True: {sample_labels[i]}\nPred: {predictions[i]}")
+plt.show()
